@@ -78,7 +78,7 @@ body {
 
 .flowers {
   position: relative;
-  transform: scale(0.9);
+  transform: scale(1);
 }
 
 .flower {
@@ -1574,4 +1574,37 @@ body {
 
 .not-loaded *:not(.loader):not(.loader__rose) {
   animation-play-state: paused !important;
+}
+
+/* ===== SPOTLIGHT ===== */
+.spotlight {
+  position: absolute;
+  top: -20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150vmin;
+  /* Increased width */
+  height: 100vh;
+  background: radial-gradient(ellipse at center top, rgba(255, 255, 255, 0.5), transparent 70%);
+  /* Increased opacity to 0.5 */
+  z-index: 100;
+  /* Ensure visible */
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  filter: blur(5vmin);
+  animation: spotlight-pulse 8s ease-in-out infinite;
+}
+
+@keyframes spotlight-pulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: translateX(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.1);
+  }
 }
