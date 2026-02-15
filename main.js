@@ -15,30 +15,33 @@ onload = () => {
   // Synthesized whoosh/rustle sound for leaf push
   function playLeafSound() {
     const ctx = getAudioContext();
-    const duration = 0.45;
+    const duration = 0.6 + Math.random() * 0.4;
     const bufferSize = ctx.sampleRate * duration;
     const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const data = buffer.getChannelData(0);
 
+    // Randomize envelope shape
+    const decayPower = 1.5 + Math.random() * 1.5;
+    const amplitude = 0.6 + Math.random() * 0.4;
+
     // Generate noise with an envelope
     for (let i = 0; i < bufferSize; i++) {
       const t = i / bufferSize;
-      // Envelope: quick attack, slow decay
-      const envelope = Math.pow(1 - t, 2.5) * Math.sin(t * Math.PI);
-      data[i] = (Math.random() * 2 - 1) * envelope * 0.4;
+      const envelope = Math.pow(1 - t, decayPower) * Math.sin(t * Math.PI);
+      data[i] = (Math.random() * 2 - 1) * envelope * amplitude;
     }
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
 
-    // Bandpass filter for a softer, rustling quality
+    // Bandpass filter — randomized for tonal variety
     const filter = ctx.createBiquadFilter();
     filter.type = "bandpass";
-    filter.frequency.value = 800;
-    filter.Q.value = 0.8;
+    filter.frequency.value = 400 + Math.random() * 500;
+    filter.Q.value = 0.2 + Math.random() * 0.6;
 
     const gain = ctx.createGain();
-    gain.gain.value = 0.35;
+    gain.gain.value = 0.5 + Math.random() * 0.3;
 
     source.connect(filter);
     filter.connect(gain);
@@ -46,27 +49,48 @@ onload = () => {
     source.start();
   }
 
-  // Background music (fades in after all leaves open)
+  // Background music (fades in after all leaves open, fades out before loop)
   let bgMusic = null;
+  const maxVol = 0.3;
+  const fadeDuration = 3; // seconds for fade-in and fade-out
+
+  function fadeVolume(target, duration, callback) {
+    const step = 0.01;
+    const interval = (duration * 1000) / (Math.abs(target - bgMusic.volume) / step);
+    const fade = setInterval(() => {
+      if (target > bgMusic.volume) {
+        bgMusic.volume = Math.min(bgMusic.volume + step, target);
+        if (bgMusic.volume >= target) { clearInterval(fade); if (callback) callback(); }
+      } else {
+        bgMusic.volume = Math.max(bgMusic.volume - step, target);
+        if (bgMusic.volume <= target) { clearInterval(fade); if (callback) callback(); }
+      }
+    }, interval);
+  }
 
   function playBackgroundMusic() {
-    bgMusic = new Audio(
-      "https://cdn.pixabay.com/audio/2024/11/29/audio_7e4a40ca0c.mp3"
-    );
+    bgMusic = new Audio("song.mp3");
     bgMusic.loop = true;
     bgMusic.volume = 0;
+    bgMusic.currentTime = 6; // Skip silent intro
     bgMusic.play().catch(() => { });
 
-    // Fade in over 3 seconds
-    let vol = 0;
-    const fadeIn = setInterval(() => {
-      vol += 0.01;
-      if (vol >= 0.3) {
-        vol = 0.3;
-        clearInterval(fadeIn);
+    // Fade in on start
+    fadeVolume(maxVol, fadeDuration);
+
+    // Fade out near the end of the track, fade back in after loop restart
+    bgMusic.addEventListener("timeupdate", () => {
+      if (!bgMusic.duration || bgMusic.duration === Infinity) return;
+      const timeLeft = bgMusic.duration - bgMusic.currentTime;
+
+      if (timeLeft <= fadeDuration && bgMusic.volume > 0.01) {
+        // Smoothly ramp down
+        bgMusic.volume = Math.max(0, (timeLeft / fadeDuration) * maxVol);
+      } else if (bgMusic.currentTime < fadeDuration && bgMusic.volume < maxVol) {
+        // Smoothly ramp up after loop restart
+        bgMusic.volume = Math.min(maxVol, (bgMusic.currentTime / fadeDuration) * maxVol);
       }
-      bgMusic.volume = vol;
-    }, 50);
+    });
   }
 
   // Double rAF ensures layout + paint are done
@@ -97,11 +121,15 @@ onload = () => {
       // Play leaf rustle sound
       playLeafSound();
 
-      // When the last leaf is clicked, start animations + music
+      // Start music on first interaction (browsers require a click to play audio)
+      if (openedCount === 1) {
+        playBackgroundMusic();
+      }
+
+      // When the last leaf is clicked, start flower animations
       if (openedCount === leaves.length) {
         document.body.classList.remove("not-loaded");
         document.body.classList.add("fireflies-visible");
-        playBackgroundMusic();
       }
     });
   });
