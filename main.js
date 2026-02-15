@@ -108,6 +108,44 @@ onload = () => {
     });
   });
 
+  // ---- Password Screen ----
+  const PASSWORD = "02/01/2024";
+  const passwordScreen = document.getElementById("password-screen");
+  const passwordInput = document.getElementById("password-input");
+  const passwordBtn = document.getElementById("password-btn");
+  const passwordError = document.getElementById("password-error");
+
+  function checkPassword() {
+    const value = passwordInput.value.trim();
+    if (value === PASSWORD) {
+      // Correct! Fade out password screen, show leaves, play music
+      passwordScreen.classList.add("hidden");
+      document.querySelector(".cover-leaves").classList.add("unlocked");
+      playBackgroundMusic();
+    } else {
+      // Wrong password — shake and show error
+      passwordError.textContent = "That's not quite right, try again 💕";
+      passwordInput.classList.add("shake");
+      setTimeout(() => passwordInput.classList.remove("shake"), 500);
+    }
+  }
+
+  passwordBtn.addEventListener("click", checkPassword);
+  passwordInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") checkPassword();
+  });
+
+  // Auto-insert "/" as user types DD/MM/YYYY
+  passwordInput.addEventListener("input", () => {
+    let v = passwordInput.value.replace(/\//g, "");
+    if (v.length > 2) v = v.slice(0, 2) + "/" + v.slice(2);
+    if (v.length > 5) v = v.slice(0, 5) + "/" + v.slice(5);
+    passwordInput.value = v;
+  });
+
+  // Auto-focus the input
+  passwordInput.focus();
+
   // Cover leaves: click to slide aside
   const leaves = document.querySelectorAll(".cover-leaf");
   let openedCount = 0;
@@ -120,11 +158,6 @@ onload = () => {
 
       // Play leaf rustle sound
       playLeafSound();
-
-      // Start music on first interaction (browsers require a click to play audio)
-      if (openedCount === 1) {
-        playBackgroundMusic();
-      }
 
       // When the last leaf is clicked, start flower animations
       if (openedCount === leaves.length) {
