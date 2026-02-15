@@ -109,7 +109,7 @@ onload = () => {
   });
 
   // ---- Password Screen ----
-  const PASSWORD = "02/01/2024";
+  const PASSWORD = "03/01/2024";
   const passwordScreen = document.getElementById("password-screen");
   const passwordInput = document.getElementById("password-input");
   const passwordBtn = document.getElementById("password-btn");
